@@ -1,6 +1,6 @@
-# Available at: irrrwin.github.io
+#Powershell Reverse Shell Obfuscator
 
-*Powershell Reverse Shell Obfuscator*
+Available at: irrrwin.github.io
 
 Uses simple obfuscation techniques to generate a reverse shell that evades all signature based detection.
 
